@@ -11,8 +11,10 @@ class Vertex<V, E> {
 
   
     private double shortestDistance;
-    private Vertex predecesor;
+    private Vertex<V, E> predecesor;
+    private int centrality;
 
+  
     public Vertex(V content) {
         this.content = content;
         this.edges = new LinkedList<>();
@@ -57,5 +59,14 @@ class Vertex<V, E> {
     public void setShortestDistance(double shortestDistance) {
         this.shortestDistance = shortestDistance;
     }
+    
+    public Vertex<V,E> getPredecesor() {
+        return predecesor;
+    }
+
+    public void setPredecesor(Vertex predecesor) {
+        this.predecesor = predecesor;
+    }
+
 
 }

@@ -25,4 +25,6 @@ public interface Graph<V, E> {
     public List<V> depthTraversal(V start);
     
     public boolean getConnectedComponents();
+    
+    public List dijktra(V content);
 }

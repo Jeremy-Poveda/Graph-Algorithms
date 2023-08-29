@@ -1,6 +1,7 @@
 package tda;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -11,7 +12,7 @@ import java.util.Stack;
 
 public class GraphAL<V, E> implements Graph<V, E> {
 
-    private List<Vertex> vertices;
+    private List<Vertex<V, E>> vertices;
     private boolean isDirected;
     private Comparator<V> cmpVertices;
     private Comparator<E> cmpEdges;
@@ -26,6 +27,7 @@ public class GraphAL<V, E> implements Graph<V, E> {
     private void resetVisited() {
         for (Vertex<V, E> v : vertices) {
             v.setVisited(false);
+            v.setShortestDistance(Double.POSITIVE_INFINITY);
         }
     }
     
@@ -287,24 +289,81 @@ public class GraphAL<V, E> implements Graph<V, E> {
         resetVisited();
         return components.size() == 1;
     }
-    public Vertex[] shortestWaysTo(V content){
+    
+    public List<List<Vertex<V, E>>> dijktra(V content) {
         Vertex<V, E> actualVertex = findVertex(content);
-        if(actualVertex == null){
+        if (actualVertex == null) {
             return null;
         }
-        Vertex[] shortestWayTo = new Vertex[vertices.size()];
-        actualVertex.setVisited(true);
-        actualVertex.setShortestDistance(0);
-        Queue<Vertex> q = new ArrayDeque();
-        q.offer(actualVertex);
-        while(!q.isEmpty()){
-            
+
+        PriorityQueue<Vertex<V, E>> pq = new PriorityQueue<>(Comparator.comparingDouble(Vertex::getShortestDistance));
+        pq.offer(actualVertex);
+
+        while (!pq.isEmpty()) {
+            actualVertex = pq.poll();
+            actualVertex.setVisited(true);
+            if(cmpVertices.compare(actualVertex.getContent(), content) == 0){ // Si el nodo que sacamos es el primero, seteamos su distancia minima en 0
+                actualVertex.setShortestDistance(0);
+                actualVertex.setPredecesor(actualVertex);
+            }
+
+            for (Edge<E, V> edge : actualVertex.getEdges()) {
+                Vertex<V, E> adjacent = edge.getTarget();
+
+                double newDistance = actualVertex.getShortestDistance() + edge.getWeight();
+                if (newDistance < adjacent.getShortestDistance()) {
+                    adjacent.setShortestDistance(newDistance);
+                    adjacent.setPredecesor(actualVertex);
+                    if (!adjacent.isVisited()) {
+                        pq.add(adjacent);
+                    }
+                }
+            }
         }
-        PriorityQueue<Vertex<V, E>> priorityQueue = new PriorityQueue<>(Comparator.comparingDouble(Vertex::getShortestDistance));
-    priorityQueue.add(actualVertex);
+
+        List<List<Vertex<V, E>>> shortestPaths = new LinkedList<>();
+        // Almacena los resultados de vértices
+        for (int i = 0; i < vertices.size(); i++) {
+            Vertex<V, E> currentVertex = vertices.get(i);
+            List<Vertex<V, E>> path = new LinkedList<>();
+            while (cmpVertices.compare(currentVertex.getContent(), content) != 0 && currentVertex.getPredecesor() != null) {
+                path.add(currentVertex);
+                currentVertex = currentVertex.getPredecesor();
+            }
+            if(currentVertex.getPredecesor() != null){
+                path.add( findVertex(content));
+            }
+            Collections.reverse(path);
+
+            shortestPaths.add(path);
+        }
+
+        resetVisited();
+        return shortestPaths;
+    }
+
+    public List<Integer> computeBetweennessCentrality(){
+        List<Integer> centralities = new LinkedList<>();
+        List<List<List<Vertex<V,E>>>> vertexsPaths = new LinkedList<>();
+        for(Vertex<V, E> v : vertices){
+            vertexsPaths.add(this.dijktra(v.getContent()));
+        }
+        // Remover caminos menores a 2
+        for(List<List<Vertex<V,E>>> vp : vertexsPaths){
+            
+            for(List<Vertex<V,E>> p : vp){
+                if(vertexsPaths.contains(Collections.reverse(p))){
+                    
+                }
+                if(p.size() <= 2){
+                    vp.remove(p);
+                }
+            }
+        }
         
-    
-        return shortestWayTo;
+        
+        
+        return centralities;
     }
 
 }
